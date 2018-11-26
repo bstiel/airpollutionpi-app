@@ -1,0 +1,32 @@
+version: '3.4'
+services:
+  app:
+    build: .
+    command: [python, app.py]
+    image: &app app
+    environment: &env
+      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:password@postgres:5432
+    ports:
+      - 8000:5000
+    restart: 'no'
+    volumes: ['./app:/app']
+
+  db-migration:
+    image: *app
+    environment: *env
+    command: [flask, db, upgrade]
+    volumes: ['./app:/app']
+
+  postgres:
+    image: postgres:11.0
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+
+volumes:
+  pg-data:
+    external: true
