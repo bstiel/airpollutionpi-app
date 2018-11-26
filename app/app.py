@@ -50,7 +50,7 @@ def timeseries():
         db.session.commit()
         return '', 201
     
-    data = db.session.query(Timeseries).filter_by(**request.args)
+    data = db.session.query(Timeseries).filter_by(**request.args).order_by(Timeseries.timestamp)
     return jsonify([{
         'timestamp': i.timestamp.isoformat(),
         'label': i.label,
