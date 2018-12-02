@@ -14,9 +14,9 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /dev/null:/traefik.toml
 
-  ui:
+  api:
     build: .
-    command: "gunicorn --bind 0.0.0.0:8000 --reload ui:app.server"
+    command: "gunicorn --bind 0.0.0.0:8000 --reload --log-level=DEBUG app:app"
     image: &app app
     environment: &env
       - API_URL=http://api:8000
@@ -28,12 +28,12 @@ services:
       - gateway
     labels:
       - traefik.docker.network=gateway
-      - traefik.frontend.rule=PathPrefix:/
+      - traefik.frontend.rule=PathPrefixStrip:/api
       - traefik.port=8000
 
-  api:
+  ui:
     build: .
-    command: "gunicorn --bind 0.0.0.0:8000 --reload app:app"
+    command: "gunicorn --bind 0.0.0.0:8000 --reload ui:app.server"
     image: *app
     environment: *env
     restart: 'no'
@@ -43,7 +43,7 @@ services:
       - gateway
     labels:
       - traefik.docker.network=gateway
-      - traefik.frontend.rule=PathPrefix:/api
+      - traefik.frontend.rule=PathPrefix:/
       - traefik.port=8000
 
   db-migration:
@@ -53,6 +53,8 @@ services:
     networks:
       - gateway
     volumes: ['./app:/app']
+    depends_on:
+      - postgres
 
   postgres:
     image: postgres:11.0
