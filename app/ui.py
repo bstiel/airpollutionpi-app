@@ -69,9 +69,9 @@ def update_graph(value):
         )],
         'layout': {
             # 'height': 225,
-            'margin': {'l': 20, 'b': 30, 'r': 10, 't': 10},
+            'margin': {'l': 30, 'b': 30, 'r': 30, 't': 30},
             'yaxis': {'type': 'linear'},
-            'xaxis': {'showgrid': False}
+            'xaxis': {'showgrid': True}
         }
     }
 
