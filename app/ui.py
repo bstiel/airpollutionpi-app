@@ -10,40 +10,42 @@ app = dash.Dash()
 logger = app.server.logger
 
 
-
 # get available series
 url = os.environ['API_URL']
 response = requests.get(f'{url}/series')
 series = {i: j for i, j in enumerate(response.json())}
 
-app.layout = html.Div([
-    html.Div([
+def serve_layout():
+    return html.Div([
+        html.Div([
+
+            html.Div([
+                dcc.Dropdown(
+                    id='timeseries-dropdown',
+                    options=[{
+                        'label': value['id'] + ':' + value['series'],
+                        'value': key} for key, value in series.items()],
+                    value=0,
+                    placeholder='Select a timeseries...'
+                ),
+                html.Div(id='output-container')
+            ],
+            style={'width': '49%', 'display': 'inline-block'})
+        ], style={
+            'borderBottom': 'thin lightgrey solid',
+            'backgroundColor': 'rgb(250, 250, 250)',
+            'padding': '10px 5px'
+        }),
 
         html.Div([
-            dcc.Dropdown(
-                id='timeseries-dropdown',
-                options=[{
-                    'label': value['id'] + ':' + value['series'],
-                    'value': key} for key, value in series.items()],
-                value=0,
-                placeholder='Select a timeseries...'
-            ),
-            html.Div(id='output-container')
-        ],
-        style={'width': '49%', 'display': 'inline-block'})
-    ], style={
-        'borderBottom': 'thin lightgrey solid',
-        'backgroundColor': 'rgb(250, 250, 250)',
-        'padding': '10px 5px'
-    }),
+            dcc.Graph(
+                id='timeseries',
+                hoverData={'points': [{'customdata': 'Japan'}]}
+            )
+        ], style={'width': '100%', 'display': 'inline-block', 'padding': '0 20'}),
+    ])
 
-    html.Div([
-        dcc.Graph(
-            id='timeseries',
-            hoverData={'points': [{'customdata': 'Japan'}]}
-        )
-    ], style={'width': '100%', 'display': 'inline-block', 'padding': '0 20'}),
-])
+app.layout = serve_layout
 
 
 @app.callback(
