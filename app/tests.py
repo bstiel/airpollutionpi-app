@@ -33,21 +33,21 @@ class TestTimeseries(TestCase):
         db.create_all()
  
     def test_can_post(self):
-        response = self.app.post('/api/timeseries',
+        response = self.app.post('/',
             data=json.dumps([
                 {
-                    'timestamp': '2018-11-26T15:00:00+00:00',
-                    'label': 'raspberry-123',
+                    'ts': '2018-11-26T15:00:00+00:00',
+                    'id': '00:0a:95:9d:68:16',
                     'data': {
-                        'temp': 20.1,
+                        'temperature': 20.1,
                         'humidity': 50.4
                     }
                 },
                 {
                     'timestamp': '2018-11-26T15:01:00+00:00',
-                    'label': 'raspberry-123',
+                    'id': '00:0a:95:9d:68:16',
                     'data': {
-                        'temp': 20.4,
+                        'temperature': 20.4,
                         'humidity': 50.1
                     }
                 }
@@ -56,13 +56,13 @@ class TestTimeseries(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(db.session.query(Timeseries).count(), 2)
 
-    def test_can_get(self):
+    def test_can_get_ids(self):
         db.session.add(
             Timeseries(
                 timestamp=datetime(2018, 11, 26, 15, 0, 0, 0, pytz.UTC),
-                label='raspberry-123',
+                id='00:0a:95:9d:68:16',
                 data={
-                    'temp': 20.1,
+                    'temperature': 20.1,
                     'humidity': 50.4
                 }
             )
@@ -70,17 +70,103 @@ class TestTimeseries(TestCase):
         db.session.add(
             Timeseries(
                 timestamp=datetime(2018, 11, 26, 15, 1, 0, 0, pytz.UTC),
-                label='raspberry-123',
+                id='00:0a:95:9d:68:16',
                 data={
-                    'temp': 20.4,
+                    'temperature': 20.4,
+                    'humidity': 50.1
+                }
+            )
+        )
+        db.session.add(
+            Timeseries(
+                timestamp=datetime(2018, 11, 27, 10, 1, 0, 0, pytz.UTC),
+                id='00-06:5b-bc-7a-c7',
+                data={
+                    'temperature': 20.4,
                     'humidity': 50.1
                 }
             )
         )
         db.session.commit()
-        response = self.app.get('/api/timeseries')
+        response = self.app.get('/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json,
-            [{'data': {'humidity': 50.4, 'temp': 20.1}, 'label': 'raspberry-123', 'timestamp': '2018-11-26T15:00:00+00:00'}, {'data': {'humidity': 50.1, 'temp': 20.4}, 'label': 'raspberry-123', 'timestamp': '2018-11-26T15:01:00+00:00'}]
+            ['00-06:5b-bc-7a-c7', '00:0a:95:9d:68:16']
+        )
+
+    def test_can_get_series(self):
+        db.session.add(
+            Timeseries(
+                timestamp=datetime(2018, 11, 26, 15, 0, 0, 0, pytz.UTC),
+                id='00:0a:95:9d:68:16',
+                data={
+                    'temperature': 20.1,
+                    'humidity': 50.4
+                }
+            )
+        )
+        db.session.add(
+            Timeseries(
+                timestamp=datetime(2018, 11, 26, 15, 1, 0, 0, pytz.UTC),
+                id='00:0a:95:9d:68:16',
+                data={
+                    'humidity': 50.1
+                }
+            )
+        )
+        db.session.add(
+            Timeseries(
+                timestamp=datetime(2018, 11, 27, 10, 1, 0, 0, pytz.UTC),
+                id='00-06:5b-bc-7a-c7',
+                data={
+                    'temperature': 17.4,
+                    'humidity': 43.1
+                }
+            )
+        )
+        db.session.commit()
+        response = self.app.get('/00:0a:95:9d:68:16')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json,
+            ['humidity', 'temperature']
+        )
+
+    def test_can_get_timeseries(self):
+        db.session.add(
+            Timeseries(
+                timestamp=datetime(2018, 11, 26, 15, 0, 0, 0, pytz.UTC),
+                id='00:0a:95:9d:68:16',
+                data={
+                    'temperature': 20.1,
+                    'humidity': 50.4
+                }
+            )
+        )
+        db.session.add(
+            Timeseries(
+                timestamp=datetime(2018, 11, 26, 15, 1, 0, 0, pytz.UTC),
+                id='00:0a:95:9d:68:16',
+                data={
+                    'humidity': 50.1
+                }
+            )
+        )
+        db.session.add(
+            Timeseries(
+                timestamp=datetime(2018, 11, 27, 10, 1, 0, 0, pytz.UTC),
+                id='00-06:5b-bc-7a-c7',
+                data={
+                    'temperature': 17.4,
+                    'humidity': 43.1
+                }
+            )
+        )
+        db.session.commit()
+        response = self.app.get('/00:0a:95:9d:68:16/temperature')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json,
+            [{'t': '2018-11-26T15:00:00+00:00', 'v': 20.1}]
         )

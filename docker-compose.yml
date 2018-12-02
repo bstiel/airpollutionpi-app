@@ -1,20 +1,57 @@
 version: '3.4'
 services:
-  app:
+
+  traefik:
+    image: traefik:1.7.4
+    command: --web --docker --logLevel=DEBUG
+    ports:
+      - "80:80"
+      - "8080:8080"
+      - "443:443"
+    networks:
+      - gateway
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /dev/null:/traefik.toml
+
+  ui:
     build: .
-    command: "gunicorn --bind 0.0.0.0:8000 app:app"
+    command: "gunicorn --bind 0.0.0.0:8000 --reload ui:app.server"
     image: &app app
     environment: &env
+      - API_URL=http://api:8000
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:password@postgres:5432
-    ports:
-      - 8000:8000
     restart: 'no'
-    volumes: ['./app:/app']
+    volumes:
+      - ./app:/app
+    networks:
+      - gateway
+    labels:
+      - traefik.docker.network=gateway
+      - traefik.frontend.rule=PathPrefix:/
+      - traefik.port=8000
+
+  api:
+    build: .
+    command: "gunicorn --bind 0.0.0.0:8000 --reload app:app"
+    image: *app
+    environment: *env
+    restart: 'no'
+    volumes:
+      - ./app:/app
+    networks:
+      - gateway
+    labels:
+      - traefik.docker.network=gateway
+      - traefik.frontend.rule=PathPrefix:/api
+      - traefik.port=8000
 
   db-migration:
     image: *app
     environment: *env
     command: [flask, db, upgrade]
+    networks:
+      - gateway
     volumes: ['./app:/app']
 
   postgres:
@@ -24,9 +61,15 @@ services:
       POSTGRES_PASSWORD: password
     volumes:
       - pg-data:/var/lib/postgresql/data
-    ports:
-      - 5432:5432
+    networks:
+      - gateway
+    labels:
+      - traefik.enable=false
 
 volumes:
   pg-data:
+    external: true
+
+networks:
+  gateway:
     external: true

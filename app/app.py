@@ -38,25 +38,43 @@ dictConfig({
 logger = app.logger
 
 
-@app.route('/api/timeseries', methods=['POST', 'GET'])
-def timeseries():
+@app.route('/', methods=['GET', 'POST'])
+def index():
     if request.method == 'POST':
+        # generic data sink
         for i in request.json:
             db.session.add(Timeseries(
-                timestamp=dateutil.parser.parse(i['timestamp']),
-                label=i['label'],
+                timestamp=dateutil.parser.parse(i.get('timestamp', i.get('ts'))),
+                id=i['id'],
                 data=i['data']
             ))
         db.session.commit()
         return '', 201
-    
-    data = db.session.query(Timeseries).filter_by(**request.args).order_by(Timeseries.timestamp)
-    return jsonify([{
-        'timestamp': i.timestamp.isoformat(),
-        'label': i.label,
-        'data': i.data
-    } for i in data]), 200
+
+    # return available timeseries ids
+    return jsonify([i[0] for i in db.session.query(Timeseries.id).distinct().order_by(Timeseries.id).all()]), 200
+
+
+@app.route('/series', methods=['GET'])
+def series():
+    if 'id' in request.args:
+        result = db.session.execute("SELECT DISTINCT id, series FROM (SELECT id, jsonb_object_keys(timeseries.data) AS series FROM timeseries WHERE timeseries.id=:id) AS q ORDER BY series, id ASC;", {'id': id})
+    else:
+        result = db.session.execute("SELECT DISTINCT id, jsonb_object_keys(timeseries.data) AS series FROM timeseries ORDER BY series, id ASC;")
+    return jsonify([dict(id=i[0], series=i[1]) for i in result])
+
+
+@app.route('/<string:id>/<string:series>', methods=['GET'])
+def timeseries(id, series):
+    # return timeseries
+    data = db.session\
+        .query(Timeseries)\
+        .filter(Timeseries.id==id)\
+        .filter(Timeseries.data.has_key(series))\
+        .filter_by(**request.args)\
+        .order_by(Timeseries.timestamp)
+    return jsonify([{'t': i.timestamp.isoformat(), 'v': i.data[series]} for i in data]), 200
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)
