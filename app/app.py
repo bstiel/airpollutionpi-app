@@ -38,27 +38,23 @@ dictConfig({
 logger = app.logger
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['POST'])
 def index():
-    if request.method == 'POST':
-        # generic data sink
-        for i in request.json:
-            db.session.add(Timeseries(
-                timestamp=dateutil.parser.parse(i.get('timestamp', i.get('ts'))),
-                id=i['id'],
-                data=i['data']
-            ))
-        db.session.commit()
-        return '', 201
-
-    # return available timeseries ids
-    return jsonify([i[0] for i in db.session.query(Timeseries.id).distinct().order_by(Timeseries.id).all()]), 200
+    # generic data sink
+    for i in request.json:
+        db.session.add(Timeseries(
+            timestamp=dateutil.parser.parse(i.get('timestamp', i.get('ts'))),
+            id=i['id'],
+            data=i['data']
+        ))
+    db.session.commit()
+    return '', 201
 
 
 @app.route('/series', methods=['GET'])
 def series():
     if 'id' in request.args:
-        result = db.session.execute("SELECT DISTINCT id, series FROM (SELECT id, jsonb_object_keys(timeseries.data) AS series FROM timeseries WHERE timeseries.id=:id) AS q ORDER BY series, id ASC;", {'id': id})
+        result = db.session.execute("SELECT DISTINCT id, series FROM (SELECT id, jsonb_object_keys(timeseries.data) AS series FROM timeseries WHERE timeseries.id=:id) AS q ORDER BY series, id ASC;", {'id': request.args['id']})
     else:
         result = db.session.execute("SELECT DISTINCT id, jsonb_object_keys(timeseries.data) AS series FROM timeseries ORDER BY series, id ASC;")
     return jsonify([dict(id=i[0], series=i[1]) for i in result])

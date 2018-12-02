@@ -56,45 +56,6 @@ class TestTimeseries(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(db.session.query(Timeseries).count(), 2)
 
-    def test_can_get_ids(self):
-        db.session.add(
-            Timeseries(
-                timestamp=datetime(2018, 11, 26, 15, 0, 0, 0, pytz.UTC),
-                id='00:0a:95:9d:68:16',
-                data={
-                    'temperature': 20.1,
-                    'humidity': 50.4
-                }
-            )
-        )
-        db.session.add(
-            Timeseries(
-                timestamp=datetime(2018, 11, 26, 15, 1, 0, 0, pytz.UTC),
-                id='00:0a:95:9d:68:16',
-                data={
-                    'temperature': 20.4,
-                    'humidity': 50.1
-                }
-            )
-        )
-        db.session.add(
-            Timeseries(
-                timestamp=datetime(2018, 11, 27, 10, 1, 0, 0, pytz.UTC),
-                id='00-06:5b-bc-7a-c7',
-                data={
-                    'temperature': 20.4,
-                    'humidity': 50.1
-                }
-            )
-        )
-        db.session.commit()
-        response = self.app.get('/')
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(
-            response.json,
-            ['00-06:5b-bc-7a-c7', '00:0a:95:9d:68:16']
-        )
-
     def test_can_get_series(self):
         db.session.add(
             Timeseries(
@@ -126,11 +87,14 @@ class TestTimeseries(TestCase):
             )
         )
         db.session.commit()
-        response = self.app.get('/00:0a:95:9d:68:16')
+        response = self.app.get('/series?id=00:0a:95:9d:68:16')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json,
-            ['humidity', 'temperature']
+            [
+                {'id': '00:0a:95:9d:68:16', 'series': 'humidity'},
+                {'id': '00:0a:95:9d:68:16', 'series': 'temperature'}
+            ]
         )
 
     def test_can_get_timeseries(self):
