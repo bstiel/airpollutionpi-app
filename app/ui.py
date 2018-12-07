@@ -10,12 +10,13 @@ app = dash.Dash()
 logger = app.server.logger
 
 
-# get available series
 url = os.environ['API_URL']
-response = requests.get(f'{url}/series')
-series = {i: j for i, j in enumerate(response.json())}
+
 
 def serve_layout():
+    # get available series
+    response = requests.get(f'{url}/series')
+    series = {i: j for i, j in enumerate(response.json())}
     return html.Div([
         html.Div([
 
@@ -65,7 +66,7 @@ def update_graph(value):
         'data': [go.Scatter(
             x=df['t'],
             y=df['v'],
-            mode='lines+markers'
+            mode='lines'
         )],
         'layout': {
             # 'height': 225,
