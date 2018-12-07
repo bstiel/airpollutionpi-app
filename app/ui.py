@@ -11,12 +11,12 @@ logger = app.server.logger
 
 
 url = os.environ['API_URL']
-
+SEP = '^^^'
 
 def serve_layout():
     # get available series
     response = requests.get(f'{url}/series')
-    series = {i: j for i, j in enumerate(response.json())}
+    series = response.json()
     return html.Div([
         html.Div([
 
@@ -25,7 +25,8 @@ def serve_layout():
                     id='timeseries-dropdown',
                     options=[{
                         'label': value['id'] + ':' + value['series'],
-                        'value': key} for key, value in series.items()],
+                        'value': value['id'] + SEP + value['series']
+                    } for value in series],
                     value=0,
                     placeholder='Select a timeseries...'
                 ),
@@ -56,7 +57,9 @@ def update_graph(value):
     if value is None:
         return {}
 
-    response = requests.get(f'{url}/{series[value]["id"]}/{series[value]["series"]}')
+    series_id, series = value.split(SEP)
+
+    response = requests.get(f'{url}/{series_id}/{series}')
     if not response.ok:
         raise ValueError(response.status_code)
 
