@@ -73,7 +73,7 @@ def update_graph(value):
         )],
         'layout': {
             # 'height': 225,
-            'margin': {'l': 30, 'b': 30, 'r': 30, 't': 30},
+            'margin': {'l': 80, 'b': 80, 'r': 80, 't': 80},
             'yaxis': {'type': 'linear'},
             'xaxis': {'showgrid': True}
         }
