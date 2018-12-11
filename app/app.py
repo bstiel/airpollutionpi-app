@@ -43,8 +43,12 @@ def index():
     # generic data sink
     for i in request.json:
         db.session.add(Timeseries(
-            timestamp=dateutil.parser.parse(i.get('timestamp', i.get('ts'))),
             id=i['id'],
+            timestamp=dateutil.parser.parse(i.get('timestamp', i.get('ts'))),
+            latitude=i.get('latitude'),
+            longitude=i.get('longitude'),
+            elevation=i.get('elevation'),
+            speed=i.get('speed'),
             data=i['data']
         ))
     db.session.commit()
