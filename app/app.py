@@ -73,7 +73,14 @@ def timeseries(id, series):
         .filter(Timeseries.data.has_key(series))\
         .filter_by(**request.args)\
         .order_by(Timeseries.timestamp)
-    return jsonify([{'t': i.timestamp.isoformat(), 'v': i.data[series]} for i in data]), 200
+    return jsonify([
+        {
+            't': i.timestamp.isoformat(),
+            'p': (i.latitude, i.longitude),
+            'e': i.elevation,
+            's': i.speed,
+            'v': i.data[series]
+        } for i in data]), 200
 
 
 if __name__ == '__main__':

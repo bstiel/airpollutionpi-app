@@ -102,6 +102,8 @@ class TestTimeseries(TestCase):
             Timeseries(
                 timestamp=datetime(2018, 11, 26, 15, 0, 0, 0, pytz.UTC),
                 id='00:0a:95:9d:68:16',
+                latitude=0.01,
+                longitude=1.,
                 data={
                     'temperature': 20.1,
                     'humidity': 50.4
@@ -112,6 +114,8 @@ class TestTimeseries(TestCase):
             Timeseries(
                 timestamp=datetime(2018, 11, 26, 15, 1, 0, 0, pytz.UTC),
                 id='00:0a:95:9d:68:16',
+                latitude=0.01,
+                longitude=1.01,
                 data={
                     'humidity': 50.1
                 }
@@ -132,5 +136,11 @@ class TestTimeseries(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(
             response.json,
-            [{'t': '2018-11-26T15:00:00+00:00', 'v': 20.1}]
+            [{
+                't': '2018-11-26T15:00:00+00:00',
+                'p': [0.01, 1.],
+                'e': None,
+                's': None,
+                'v': 20.1
+            }]
         )
