@@ -1,8 +1,8 @@
 version: '3.4'
 services:
 
-  traefik:
-    image: traefik:1.7.4
+  grafana:
+    image: grafana/grafana:5.3.2
     command: --web --docker --logLevel=DEBUG
     ports:
       - "80:80"
@@ -14,62 +14,44 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /dev/null:/traefik.toml
 
-  api:
-    build: .
-    command: "gunicorn --bind 0.0.0.0:8000 --reload --log-level=DEBUG app:app"
-    image: &app app
+  influxdb:
+    image: influxdb:1.5.4
     environment: &env
       - API_URL=http://api:8000
       - SQLALCHEMY_DATABASE_URI=postgresql://postgres:password@postgres:5432
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+      - "8090:8090"
     restart: 'no'
     volumes:
-      - ./app:/app
-    networks:
-      - gateway
-    labels:
-      - traefik.docker.network=gateway
-      - traefik.frontend.rule=PathPrefixStrip:/api
-      - traefik.port=8000
+      - influxdb-data:/var/lib/influxdb
 
-  ui:
-    build: .
-    command: "gunicorn --bind 0.0.0.0:8000 --reload ui:app.server"
-    image: *app
-    environment: *env
-    restart: 'no'
-    volumes:
-      - ./app:/app
-    networks:
-      - gateway
-    labels:
-      - traefik.docker.network=gateway
-      - traefik.frontend.rule=PathPrefix:/
-      - traefik.port=8000
+    # networks:
+    #   - gateway
+    # labels:
+    #   - traefik.docker.network=gateway
+    #   - traefik.frontend.rule=PathPrefixStrip:/api
+    #   - traefik.port=8000
 
-  db-migration:
-    image: *app
-    environment: *env
-    command: [flask, db, upgrade]
-    networks:
-      - gateway
-    volumes: ['./app:/app']
-    depends_on:
-      - postgres
 
-  postgres:
-    image: postgres:11.0
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - pg-data:/var/lib/postgresql/data
-    networks:
-      - gateway
-    labels:
-      - traefik.enable=false
+image: influxdb:latest
+  container_name: influxdb
+  ports:
+    - "8083:8083"
+    - "8086:8086"
+    - "8090:8090"
+  env_file:
+    - 'env.influxdb'
+  volumes:
+    # Data persistency
+    # sudo mkdir -p /srv/docker/influxdb/data
+    - /srv/docker/influxdb/data:/var/lib/influxdb
+
+
 
 volumes:
-  pg-data:
+  influxdb-data:
     external: true
 
 networks:
