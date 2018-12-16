@@ -18,6 +18,8 @@ services:
     image: grafana/grafana:5.3.2
     networks:
       - gateway
+    volumes:
+      - grafana-data:/var/lib/grafana
     labels:
       - "traefik.docker.network=gateway"
       - "traefik.frontend.rule=PathPrefix:/"
@@ -63,6 +65,8 @@ networks:
   - gateway
 
 volumes:
+  grafana-data:
+    external: true
   chronograf-data:
     external: true
   influxdb-data:
