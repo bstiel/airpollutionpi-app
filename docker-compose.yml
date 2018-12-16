@@ -56,7 +56,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=gateway"
-      - "traefik.frontend.rule=Host:influxdb.chronograf.datalake.ninja"
+      - "traefik.frontend.rule=Host:influxdb.datalake.ninja"
       - "traefik.port=8086"
 
 networks:
