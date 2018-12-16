@@ -14,62 +14,62 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /dev/null:/traefik.toml
 
-  api:
-    build: .
-    command: "gunicorn --bind 0.0.0.0:8000 --reload --log-level=DEBUG app:app"
-    image: &app app
-    environment: &env
-      - API_URL=http://api:8000
-      - SQLALCHEMY_DATABASE_URI=postgresql://postgres:password@postgres:5432
-    restart: 'no'
+  grafana:
+    image: grafana/grafana:5.3.2
+    networks:
+      - gateway
     volumes:
-      - ./app:/app
-    networks:
-      - gateway
+      - grafana-data:/var/lib/grafana
     labels:
-      - traefik.docker.network=gateway
-      - traefik.frontend.rule=PathPrefixStrip:/api
-      - traefik.port=8000
+      - "traefik.docker.network=gateway"
+      - "traefik.frontend.rule=PathPrefix:/"
 
-  ui:
-    build: .
-    command: "gunicorn --bind 0.0.0.0:8000 --reload ui:app.server"
-    image: *app
-    environment: *env
-    restart: 'no'
-    volumes:
-      - ./app:/app
-    networks:
-      - gateway
-    labels:
-      - traefik.docker.network=gateway
-      - traefik.frontend.rule=PathPrefix:/
-      - traefik.port=8000
 
-  db-migration:
-    image: *app
-    environment: *env
-    command: [flask, db, upgrade]
-    networks:
-      - gateway
-    volumes: ['./app:/app']
-    depends_on:
-      - postgres
-
-  postgres:
-    image: postgres:11.0
+  chronograf:
+    image: chronograf:1.5.0
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    volumes:
-      - pg-data:/var/lib/postgresql/data
+     - INFLUXDB_URL=http://influxdb:8086
+    restart: 'no'
     networks:
       - gateway
+    volumes:
+      - chronograf-data:/var/lib/chronograf
+    depends_on:
+      - influxdb
     labels:
-      - traefik.enable=false
+      - "traefik.enable=true"
+      - "traefik.docker.network=gateway"
+      - "traefik.frontend.rule=Host:chronograf.datalake.ninja"
+      - "traefik.port=8888"
+
+  influxdb:
+    image: influxdb:1.5.4
+    environment:
+     - INFLUXDB_DATA_ENGINE=tsm1
+     - INFLUXDB_REPORTING_DISABLED=false
+     - INFLUXDB_HTTP_AUTH_ENABLED=true
+     - INFLUXDB_ADMIN_USER=admin
+     - INFLUXDB_ADMIN_PASSWORD=password
+    restart: 'no'
+    networks:
+      - gateway
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=gateway"
+      - "traefik.frontend.rule=Host:influxdb.datalake.ninja"
+      - "traefik.port=8086"
+
+networks:
+  - gateway
 
 volumes:
-  pg-data:
+  grafana-data:
+    external: true
+  chronograf-data:
+    external: true
+  influxdb-data:
     external: true
 
 networks:
