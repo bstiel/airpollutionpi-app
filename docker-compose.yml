@@ -16,6 +16,8 @@ services:
 
   grafana:
     image: grafana/grafana:5.3.2
+    environment:
+      -GF_INSTALL_PLUGINS=grafana-worldmap-panel
     networks:
       - gateway
     volumes:
